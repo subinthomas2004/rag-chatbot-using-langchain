@@ -92,7 +92,7 @@ class LLMService:
 
             return (
                 f"⚠️ Gemini API Notice: Could not complete generation ({last_err}).\n\n"
-                f"Synthesized from ChromaDB context:\n"
+                f"Synthesized from Pinecone context:\n"
                 f"{self._extract_fallback_context(prompt)}"
             )
 

@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 st.title("🧠 Retrieval-Augmented Generation (RAG) Chatbot")
-st.caption("Powered by LangChain, ChromaDB Vector Store, and Google Gemini 3.8 Flash")
+st.caption("Powered by LangChain, Pinecone Vector Database, and Google Gemini 3.8 Flash")
 
 # Initialize session state
 if "messages" not in st.session_state:
@@ -27,22 +27,30 @@ if "messages" not in st.session_state:
 if "indexed_docs" not in st.session_state:
     st.session_state.indexed_docs = 0
 
-if "vector_store" not in st.session_state:
-    st.session_state.vector_store = VectorStoreManager(collection_name="streamlit_rag_demo")
-
-if "emb_manager" not in st.session_state:
-    st.session_state.emb_manager = EmbeddingsManager()
-
-# Default Gemini configuration
+# Configuration
 GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
+PINECONE_KEY = os.getenv("PINECONE_API_KEY", "")
 MODEL_NAME = "gemini-3.8-flash"
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 100
 TOP_K = 3
 
-# Clean & Minimalist Sidebar
+if "vector_store" not in st.session_state:
+    st.session_state.vector_store = VectorStoreManager(
+        index_name="rag-chatbot-index",
+        dimension=384,
+        api_key=PINECONE_KEY
+    )
+
+if "emb_manager" not in st.session_state:
+    st.session_state.emb_manager = EmbeddingsManager()
+
+# Clean Sidebar
 with st.sidebar:
     st.header("📄 Knowledge Base")
+
+    st.markdown("**Vector Database:** `🌲 Pinecone (Serverless)`")
+    st.markdown(f"**LLM:** `{MODEL_NAME}`")
 
     default_paper_name = "NIPS-2017-attention-is-all-you-need-Paper.pdf"
     has_local_paper = os.path.exists(default_paper_name)
@@ -50,7 +58,7 @@ with st.sidebar:
     if has_local_paper:
         st.info(f"Paper: `{default_paper_name}`")
         if st.button("⚡ Load Paper PDF", use_container_width=True):
-            with st.spinner("Indexing document pages into ChromaDB..."):
+            with st.spinner("Indexing document pages into Pinecone..."):
                 docs = load_pdf(default_paper_name)
                 chunks = split_documents(
                     docs,
@@ -82,8 +90,7 @@ with st.sidebar:
                 st.success(f"Indexed {count} chunks from `{uploaded_file.name}`!")
 
     st.divider()
-    st.markdown(f"**Database:** ChromaDB (`{st.session_state.indexed_docs}` chunks indexed)")
-    st.markdown(f"**LLM:** `{MODEL_NAME}`")
+    st.markdown(f"**Chunks in Index:** `{st.session_state.indexed_docs}`")
 
     if st.session_state.indexed_docs > 0:
         if st.button("🗑️ Clear Chat & Knowledge Base", use_container_width=True):

@@ -1,6 +1,6 @@
-# 🧠 RAG-Based AI Chatbot using LangChain & ChromaDB
+# 🧠 RAG-Based AI Chatbot using LangChain & Pinecone
 
-An end-to-end **Retrieval-Augmented Generation (RAG)** chatbot built with **LangChain**, **ChromaDB**, and **Streamlit**. Supports multi-LLM integration (Google Gemini, OpenAI ChatGPT, Anthropic Claude, and Offline Demo mode) with real-time PDF/document ingestion, character & recursive text chunking, and source citation.
+An end-to-end **Retrieval-Augmented Generation (RAG)** chatbot built with **LangChain**, **Pinecone Serverless Vector Database**, and **Streamlit**. Supports multi-LLM integration (Google Gemini, OpenAI ChatGPT, Anthropic Claude, Groq, and Offline Demo mode) with real-time PDF ingestion, sliding-window text chunking, and source citation.
 
 ---
 
@@ -8,102 +8,96 @@ An end-to-end **Retrieval-Augmented Generation (RAG)** chatbot built with **Lang
 
 ```mermaid
 flowchart TD
-    A[📄 Raw Documents: PDF / TXT / MD] --> B[🧹 Document Loader & Text Cleaner]
+    A[📄 Raw Documents: PDF / TXT] --> B[🧹 Document Loader & Text Cleaner]
     B --> C[✂️ Text Splitter: Sliding Window Chunking]
-    C --> D[🔢 Embedding Model: SentenceTransformers / OpenAI / Gemini]
-    D --> E[(💾 ChromaDB Vector Database)]
-    
+    C --> D[🔢 Embedding Model: SentenceTransformers]
+    D --> E[(🌲 Pinecone Serverless Vector Database)]
+
     F[👤 User Query] --> G[🔢 Query Embedder]
     G --> H[🔍 Semantic Similarity Search]
     E --> H
     H --> I[📑 Top-K Retrieved Passages + Metadata]
-    
+
     I --> J[📝 LangChain PromptTemplate: Context Augmentation]
     F --> J
-    J --> K[🤖 LLM: Gemini / GPT-4o / Claude / Local]
+    J --> K[🤖 LLM: Gemini / GPT-4o / Claude / Groq]
     K --> L[💬 Synthesized Answer with Source Attribution]
 ```
 
-### Key Components:
-1. **Document Loading & Preprocessing (`src/document_loader.py`)**:
-   - Parses multi-page PDF documents using `pypdf`.
-   - Cleans whitespaces, redundant line breaks, and extracts page-level metadata.
-2. **Chunking & Splitting (`src/text_splitter.py`)**:
-   - Implements configurable sliding-window character chunking (default: `500` chars with `100` chars overlap).
-   - Retains page numbers, chunk identifiers, and document names.
-3. **Embeddings Engine (`src/embeddings.py`)**:
-   - Generates high-dimensional vector representations.
-   - Compatible with `sentence-transformers` (`BAAI/bge-small-en-v1.5`), `OpenAI` (`text-embedding-3-small`), `Google Gemini`, or offline fallback.
-4. **Vector Database (`src/vectorstore.py`)**:
-   - Integrates **ChromaDB** with collection management, batch upserting, and cosine similarity distance calculation.
-5. **RAG Pipeline & LLM Service (`src/rag_pipeline.py`)**:
-   - Connects to OpenAI, Google Gemini, Anthropic Claude, or local generation.
-   - Uses LangChain's `PromptTemplate` to enforce hallucination-resistant context conditioning.
-6. **User Interface (`app.py`)**:
-   - Interactive Streamlit dashboard with real-time file upload, index management, parameter tuning (chunk size, overlap, Top-K), and citation viewing.
+### Key Components
+
+| Module | File | Description |
+|--------|------|-------------|
+| Document Loader | `src/document_loader.py` | Parses multi-page PDFs with `pypdf`, cleans whitespace & extracts page metadata |
+| Text Splitter | `src/text_splitter.py` | Sliding-window character chunking (default 500 chars / 100 overlap) with chunk IDs |
+| Embeddings Engine | `src/embeddings.py` | Dense vector generation via `sentence-transformers` (`BAAI/bge-small-en-v1.5`) |
+| Vector Store | `src/vectorstore.py` | **Pinecone Serverless** — batch upsert, cosine similarity search, index auto-creation |
+| RAG Pipeline | `src/rag_pipeline.py` | LangChain `PromptTemplate` + multi-provider LLM generation |
+| UI | `app.py` | Streamlit dashboard with file upload, chat, and source citation viewer |
 
 ---
 
-## 🚀 Quickstart Guide
+## 🚀 Quickstart
 
 ### 1. Prerequisites
 - Python 3.10+
-- Git
+- A free [Pinecone account](https://app.pinecone.io) (Serverless free tier is sufficient)
 
 ### 2. Installation
-Clone the repository and install the required dependencies:
+
 ```bash
 git clone https://github.com/<YOUR_USERNAME>/rag-chatbot.git
 cd rag-chatbot
 
 # Create virtual environment
 python -m venv venv
-# On Windows:
-venv\Scripts\activate
-# On Linux/macOS:
-source venv/bin/activate
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # Linux / macOS
 
-# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 3. Environment Setup (Optional)
-Copy `.env.example` to `.env` and insert your API keys:
+### 3. Environment Setup
+
 ```bash
 cp .env.example .env
 ```
-*(Note: You can also enter API keys directly in the Streamlit UI sidebar)*
 
-### 4. Running the Streamlit Application
+Edit `.env` and add your keys:
+
+```env
+PINECONE_API_KEY=your_pinecone_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here   # or GROQ / OPENAI / ANTHROPIC
+```
+
+### 4. Run
+
 ```bash
 streamlit run app.py
 ```
-Open your browser at `http://localhost:8501`.
+
+Open `http://localhost:8501` in your browser.
 
 ---
 
-## 🧪 Testing the Pipeline
-You can test the entire RAG pipeline from the command line without the web UI:
+## 🧪 Testing
+
+Run the full pipeline from the command line (no UI):
+
 ```bash
 python test_pipeline.py
 ```
 
 ---
 
-## 🐳 Docker Deployment (Optional)
-
-You can run the entire solution in an isolated Docker container:
+## 🐳 Docker
 
 ```bash
-# Build the Docker image
+# Build & run
 docker build -t rag-chatbot .
+docker run -p 8501:8501 --env-file .env rag-chatbot
 
-# Run container
-docker run -p 8501:8501 rag-chatbot
-```
-
-Or run with **Docker Compose**:
-```bash
+# Or with Compose
 docker compose up -d
 ```
 
@@ -113,33 +107,30 @@ docker compose up -d
 
 ```
 rag_project/
-│── app.py                  # Streamlit Chatbot Application
-│── requirements.txt        # Python package dependencies
-│── Dockerfile              # Docker container specification
-│── docker-compose.yml      # Docker compose configuration
-│── README.md               # Detailed project documentation
-│── .gitignore              # Files excluded from git tracking
-│── .env.example            # Template for environment variables
-│── test_pipeline.py        # Automated test verification script
-│
-├── src/                    # Core RAG Modules
-│   ├── document_loader.py  # PDF and text extraction & cleaning
-│   ├── text_splitter.py    # Sliding window chunking & metadata tagging
-│   ├── embeddings.py       # Multi-provider embedding generator
-│   ├── vectorstore.py      # ChromaDB storage & similarity search
-│   └── rag_pipeline.py     # LangChain PromptTemplate & LLM generation
-│
-└── sample_docs/            # Sample documents for immediate testing
-    └── transformer_paper_summary.txt
+├── app.py                  # Streamlit chatbot UI
+├── requirements.txt        # Python dependencies
+├── Dockerfile              # Container spec
+├── docker-compose.yml      # Compose config
+├── .env.example            # Environment variable template
+├── test_pipeline.py        # CLI pipeline test
+└── src/
+    ├── document_loader.py  # PDF loading & cleaning
+    ├── text_splitter.py    # Chunking & metadata tagging
+    ├── embeddings.py       # Embedding generation
+    ├── vectorstore.py      # Pinecone vector store
+    └── rag_pipeline.py     # LangChain prompt + LLM service
 ```
 
 ---
 
-## 📝 GitHub Submission Checklist
-- [x] Document loading & text splitting implementation
-- [x] Embeddings generation & ChromaDB integration
-- [x] Multi-LLM provider integration with LangChain prompts
-- [x] Streamlit web user interface with citations
-- [x] Architecture diagrams, setup guide, and documentation
-- [x] Dockerfile and Docker Compose support
-- [x] Ready to push to GitHub!
+## ✅ Features
+
+- [x] PDF ingestion with page-level metadata
+- [x] Configurable sliding-window text chunking
+- [x] Dense embeddings via `sentence-transformers`
+- [x] **Pinecone Serverless** vector database (cloud-native, fully managed)
+- [x] Multi-LLM support: Gemini, GPT-4o, Claude, Groq
+- [x] LangChain `PromptTemplate` for hallucination-resistant answers
+- [x] Source citation with document name & page number
+- [x] Streamlit web UI with chat history
+- [x] Docker & Docker Compose support
