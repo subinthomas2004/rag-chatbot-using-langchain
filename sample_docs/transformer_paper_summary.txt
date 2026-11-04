@@ -1,0 +1,8 @@
+The Transformer is a deep learning model architecture introduced in the 2017 research paper 'Attention Is All You Need' by Vaswani et al. Unlike earlier recurrent neural networks (RNNs) and Long Short-Term Memory networks (LSTMs) that process sequential data token by token, the Transformer relies entirely on an attention mechanism to model dependencies between input and output representations globally.
+
+The architecture follows an encoder-decoder structure:
+1. Encoder: Composed of a stack of identical layers. Each layer consists of multi-head self-attention mechanisms followed by position-wise fully connected feed-forward networks. Residual connections and layer normalization are applied around each sub-layer.
+2. Decoder: Similar to the encoder stack, but introduces masked multi-head attention to prevent positions from attending to subsequent positions, preserving the auto-regressive property during generation.
+3. Positional Encoding: Since the Transformer contains no recurrence or convolution, information about the relative or absolute position of tokens in the sequence is injected via positional encodings added to the input embeddings.
+
+Key advantages of the Transformer include significant parallelizability during training, superior translation and language modeling performance, and reduced computational training times compared to recurrent architectures.
